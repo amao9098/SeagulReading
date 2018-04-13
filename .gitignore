@@ -1,0 +1,6 @@
+# vscode
+*.vscode
+
+# mac file
+*.DS_Store
+
