@@ -4,3 +4,8 @@
 # mac file
 *.DS_Store
 
+# no data
+Data/
+
+# notebook
+*.ipynb_checkpoints
