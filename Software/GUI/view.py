@@ -29,19 +29,28 @@ class SeagulFrame(wx.Frame):
     # listener
     self.rest_btn.Bind(wx.EVT_BUTTON, self.on_start_rest)
     self.read_btn.Bind(wx.EVT_BUTTON, self.on_start_read)
-
     ### Software Model ###
     self.model = Model()
 
   def on_start_rest(self, event):
     """
-    Start information recording window
+    Start resting recording window
     """
-    info_window = StartWindow(self.model)
-    info_window.Show()
+    if self.model.is_rested():
+      wx.MessageBox('Resting data already recorded', 'Warning', wx.OK | wx.ICON_INFORMATION)
+    else:
+      info_window = StartWindow(self.model)
+      info_window.Show()
    
-  def on_start_read():
-    pass
+  def on_start_read(self, event):
+    """
+    Start reading 
+    """
+    if not self.model.is_rested():
+      wx.MessageBox('Need to record resting data first!', 'Warning', wx.OK | wx.ICON_INFORMATION)
+    else:
+      pass
+       
 
   def on_close(self, event):
     self.Destroy()
@@ -131,6 +140,7 @@ class StartWindow(wx.Frame):
   def finish_rest(self):
     self.time_txt.SetForegroundColour((255,0,0))
     self.time_txt.SetLabel("5 minute Resting finished")
+    self.model.rested()
 
 
   def on_close(self, event):
