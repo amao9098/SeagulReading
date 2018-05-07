@@ -47,6 +47,8 @@ class SeagulFrame(wx.Frame):
     self.Destroy()
 
 
+
+
 class StartWindow(wx.Frame):
 
   def __init__(self, model):
@@ -62,20 +64,26 @@ class StartWindow(wx.Frame):
     self.exp_txt.SetValue("Your experiment number: ")   
     self.exp_txt.Bind(wx.EVT_KEY_DOWN, self.toggle_exp)
     # boxer
-    sizer = wx.BoxSizer(wx.VERTICAL)
-    sizer.Add(self.name_txt, 1, wx.ALL|wx.ALIGN_CENTER, 5)
-    sizer.Add(self.exp_txt, 1, wx.ALL|wx.ALIGN_CENTER, 5)
-    self.panel.SetSizer(sizer)
+    self.sizer = wx.BoxSizer(wx.VERTICAL)
+    self.sizer.Add(self.name_txt, 1, wx.ALL|wx.ALIGN_CENTER, 5)
+    self.sizer.Add(self.exp_txt, 1, wx.ALL|wx.ALIGN_CENTER, 5)
+    self.panel.SetSizer(self.sizer)
     # button
     hbox = wx.BoxSizer(wx.HORIZONTAL)
     self.submit_btn = wx.Button(self.panel, label="Submit")
     self.cancel_btn = wx.Button(self.panel, label="Cancel")
     hbox.Add(self.submit_btn)
     hbox.Add(self.cancel_btn)
-    sizer.Add(hbox, 1, wx.ALL|wx.ALIGN_CENTER, 5)
+    self.sizer.Add(hbox, 1, wx.ALL|wx.ALIGN_CENTER, 5)
     # bind buttons
     self.submit_btn.Bind(wx.EVT_BUTTON, self.on_submit)
     self.cancel_btn.Bind(wx.EVT_BUTTON, self.on_cancel)
+    # timer used for count down
+    self.timer = wx.Timer(self, -1)
+    self.start_min = 0
+    self.now_min = 0
+    self.now_sec = 0
+    self.time_txt = wx.StaticText(self.panel, label="")
 
   def toggle_name(self, event):
     if self.name_txt.GetValue() == "Your name (Last, First): ":
@@ -92,13 +100,46 @@ class StartWindow(wx.Frame):
     Record subject info, and start a 5-minute recording session
     """
     self.model.get_info(self.name_txt.GetValue(), self.exp_txt.GetValue())
-
+    # start a recording session
+    # self.model.start_streamer()
+    # clear screen
+    for child in self.panel.GetChildren():
+      child.Destroy()
+    # start timer 
+    self.Bind(wx.EVT_TIMER, self.update_clock, self.timer)
+    self.time_txt = wx.StaticText(self.panel, label="")
+    font = wx.Font(18, wx.MODERN, wx.NORMAL, wx.BOLD)
+    self.time_txt.SetFont(font)
+    self.time_txt.SetLabel("00:00")
+    sizer = wx.BoxSizer(wx.VERTICAL)
+    sizer.Add(self.time_txt , 0, wx.ALL|wx.ALIGN_CENTER, 5)
+    self.panel.SetSizer(sizer)
+    self.timer.Start(1000)
     
+  def update_clock(self, event):
+    if self.now_min - self.start_min >= 5:
+      self.timer.Stop()
+      self.finish_rest()
+    else:
+      self.now_sec += 1
+      if self.now_sec == 60:
+        self.now_sec = 0
+        self.now_min += 1
+      now_sec_str = str(self.now_sec) if self.now_sec > 9 else "0" + str(self.now_sec)
+      self.time_txt.SetLabel("0" + str(self.now_min) + ":" + now_sec_str)
+  
+  def finish_rest(self):
+    self.time_txt.SetForegroundColour((255,0,0))
+    self.time_txt.SetLabel("5 minute Resting finished")
+
+
   def on_close(self, event):
     self.Destroy()
  
   def on_cancel(self, event):
     self.on_close(event) 
+
+
 
 if __name__ == "__main__":
   app = wx.App(False)
