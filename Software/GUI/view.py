@@ -7,6 +7,7 @@ GUI for Seagul Reading Project
 import wx
 from model import Model
 
+
 class SeagulFrame(wx.Frame):
 
   def __init__(self):
@@ -51,11 +52,8 @@ class SeagulFrame(wx.Frame):
     else:
       pass
        
-
   def on_close(self, event):
     self.Destroy()
-
-
 
 
 class StartWindow(wx.Frame):
@@ -110,7 +108,7 @@ class StartWindow(wx.Frame):
     """
     self.model.get_info(self.name_txt.GetValue(), self.exp_txt.GetValue())
     # start a recording session
-    # self.model.start_streamer()
+    self.model.start_streamer()
     # clear screen
     for child in self.panel.GetChildren():
       child.Destroy()
@@ -147,8 +145,7 @@ class StartWindow(wx.Frame):
     self.Destroy()
  
   def on_cancel(self, event):
-    self.on_close(event) 
-
+    self.on_close(event)
 
 
 if __name__ == "__main__":

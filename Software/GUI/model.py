@@ -7,11 +7,11 @@ Model for Seagul Reading
 
 import sys
 import platform
-#from CCDLUtil.EEGInterface.Emotiv.EmotivInterface import EmotivStreamer
+from CCDLUtil.EEGInterface.Emotiv.EmotivInterface import EmotivStreamer
 from constants import *
 
 
-class Model():
+class Model:
   
   def __init__(self):
     self._subject_name = ""
@@ -25,7 +25,8 @@ class Model():
     
   def start_streamer(self):
     assert self._subject_name != "" and self._exp_num != ""
-    #self._streamer = EmotivStreamer("../Data/" + "self._exp_num" + "_eeg.csv", EMOTIV_LIB_PATH)
+    self._streamer = EmotivStreamer("../Data/" + self._exp_num + "_eeg.csv", EMOTIV_LIB_PATH)
+    self._streamer.start_recording()
 
   def rested(self):
     self._rested = True
