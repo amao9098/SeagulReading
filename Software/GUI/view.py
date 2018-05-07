@@ -5,6 +5,7 @@ GUI for Seagul Reading Project
 """
 
 import wx
+from model import Model
 
 class SeagulFrame(wx.Frame):
 
@@ -29,12 +30,14 @@ class SeagulFrame(wx.Frame):
     self.rest_btn.Bind(wx.EVT_BUTTON, self.on_start_rest)
     self.read_btn.Bind(wx.EVT_BUTTON, self.on_start_read)
 
+    ### Software Model ###
+    self.model = Model()
 
   def on_start_rest(self, event):
     """
     Start information recording window
     """
-    info_window = StartWindow()
+    info_window = StartWindow(self.model)
     info_window.Show()
    
   def on_start_read():
@@ -46,15 +49,18 @@ class SeagulFrame(wx.Frame):
 
 class StartWindow(wx.Frame):
 
-  def __init__(self):
+  def __init__(self, model):
     wx.Frame.__init__(self, None, wx.ID_ANY, "Please enter your information:") 
+    self.model = model
     self.panel = wx.Panel(self)
     self.Bind(wx.EVT_CLOSE, self.on_close)
     # Subject recording
     self.name_txt = wx.TextCtrl(self.panel, -1, style=wx.TE_CENTRE, size=(250, -1))
     self.name_txt.SetValue("Your name (Last, First): ") 
+    self.name_txt.Bind(wx.EVT_KEY_DOWN, self.toggle_name)
     self.exp_txt = wx.TextCtrl(self.panel, -1, style=wx.TE_CENTRE, size=(250, -1)) 
     self.exp_txt.SetValue("Your experiment number: ")   
+    self.exp_txt.Bind(wx.EVT_KEY_DOWN, self.toggle_exp)
     # boxer
     sizer = wx.BoxSizer(wx.VERTICAL)
     sizer.Add(self.name_txt, 1, wx.ALL|wx.ALIGN_CENTER, 5)
@@ -68,9 +74,26 @@ class StartWindow(wx.Frame):
     hbox.Add(self.cancel_btn)
     sizer.Add(hbox, 1, wx.ALL|wx.ALIGN_CENTER, 5)
     # bind buttons
+    self.submit_btn.Bind(wx.EVT_BUTTON, self.on_submit)
     self.cancel_btn.Bind(wx.EVT_BUTTON, self.on_cancel)
 
+  def toggle_name(self, event):
+    if self.name_txt.GetValue() == "Your name (Last, First): ":
+      self.name_txt.SetValue("")
+    event.Skip()
 
+  def toggle_exp(self, event):
+    if self.exp_txt.GetValue() == "Your experiment number: ":
+      self.exp_txt.SetValue("")
+    event.Skip()
+
+  def on_submit(self, event):
+    """
+    Record subject info, and start a 5-minute recording session
+    """
+    self.model.get_info(self.name_txt.GetValue(), self.exp_txt.GetValue())
+
+    
   def on_close(self, event):
     self.Destroy()
  
