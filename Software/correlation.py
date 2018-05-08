@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from numpy import corrcoef
 from scipy.signal import butter, lfilter, welch, find_peaks_cwt
 
 
@@ -9,7 +10,7 @@ def read_data(file_dir):
     :param file_dir: file path
     :return: DataFrame object
     """
-    return pd.read_csv(file_dir)
+    return pd.read_csv(file_dir, encoding='ascii')
 
 
 def high_pass(low, high, df, fs, order=4):
@@ -44,6 +45,7 @@ def baseline(resting_o1, fs):
     returns:
         value of the baseline
     """
+    print(len(resting_o1))
     assert len(resting_o1) % (2 * fs) == 0
     resting_o1 = resting_o1.values.reshape((int(len(resting_o1) / (2 * fs)), 2 * fs))
     # power list to store the power spectrum for each epoch
@@ -61,11 +63,15 @@ def baseline(resting_o1, fs):
     corrs = []
     for power in powers:
         corrs.append(corrcoef(power, mean_power)[0][1])
-    # baseline is the mean of correlations
+
     return np.mean(corrs)
 
 
- def get_baseline(file_dir, low, high, fs, order=4):
+def get_baseline(file_dir, low, high, fs, order=4):
     df = read_data(file_dir)
-    filtered_df = high_pass(low, high, df, fs, )
-
+    filtered_df = high_pass(low, high, df, fs, order)
+    # cut length
+    o1 = filtered_df["O1"]
+    o1_truncate = len(o1) % (2 * fs)
+    o1 = o1.iloc[0:(len(o1) - o1_truncate)]
+    return baseline(o1, fs)

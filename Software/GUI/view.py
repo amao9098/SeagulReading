@@ -5,10 +5,10 @@ GUI for Seagul Reading Project
 """
 
 import wx
+import time
 from model import Model
 
-
-class SeagulFrame(wx.Frame):
+class SeagullFrame(wx.Frame):
 
     def __init__(self):
         wx.Frame.__init__(self, None, wx.ID_ANY, "Seagul Reading")
@@ -86,11 +86,7 @@ class StartWindow(wx.Frame):
         self.submit_btn.Bind(wx.EVT_BUTTON, self.on_submit)
         self.cancel_btn.Bind(wx.EVT_BUTTON, self.on_cancel)
         # timer used for count down
-        self.timer = wx.Timer(self, -1)
-        self.start_min = 0
-        self.now_min = 0
-        self.now_sec = 0
-        self.time_txt = wx.StaticText(self.panel, label="")
+        self._start_rest_time = None
 
     def toggle_name(self, event):
         if self.name_txt.GetValue() == "Your name (Last, First): ":
@@ -108,38 +104,23 @@ class StartWindow(wx.Frame):
         """
         self.model.get_info(self.name_txt.GetValue(), self.exp_txt.GetValue())
         # start a recording session
-        self.model.start_streamer()
+        self.model.start_resting()
         # clear screen
         for child in self.panel.GetChildren():
           child.Destroy()
         # start timer
-        self.Bind(wx.EVT_TIMER, self.update_clock, self.timer)
-        self.time_txt = wx.StaticText(self.panel, label="")
-        font = wx.Font(18, wx.MODERN, wx.NORMAL, wx.BOLD)
-        self.time_txt.SetFont(font)
-        self.time_txt.SetLabel("00:00")
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.time_txt , 0, wx.ALL|wx.ALIGN_CENTER, 5)
-        self.panel.SetSizer(sizer)
-        self.timer.Start(1000)
-    
-    def update_clock(self, event):
-        if self.now_min - self.start_min >= 5:
-            self.timer.Stop()
-            self.finish_rest()
-        else:
-            self.now_sec += 1
-            if self.now_sec == 60:
-                self.now_sec = 0
-                self.now_min += 1
-            now_sec_str = str(self.now_sec) if self.now_sec > 9 else "0" + str(self.now_sec)
-            self.time_txt.SetLabel("0" + str(self.now_min) + ":" + now_sec_str)
-  
-    def finish_rest(self):
-        self.time_txt.SetForegroundColour((255,0,0))
-        self.time_txt.SetLabel("5 minute Resting finished")
-        self.model.rested()
-        self.model.stop_streamer()
+        wait_txt = wx.StaticText(self.panel, label="Please wait for resting data collection to be done...")
+        font = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
+        wait_txt.SetFont(font)
+        # timing for 5 min
+        while time.time() - self.model.get_start_rest_time() <= 10:
+            pass
+        # finish resting
+        self.model.finish_resting()
+        # then close window, pop up line number
+        wx.MessageBox('Resting data finished recording. Total line: %d' % (self.model.get_total_line_count()),
+                      'Resting Finished', wx.OK | wx.ICON_INFORMATION)
+        self.on_close(event)
 
     def on_close(self, event):
         self.Destroy()
@@ -147,10 +128,3 @@ class StartWindow(wx.Frame):
     def on_cancel(self, event):
         self.on_close(event)
 
-
-if __name__ == "__main__":
-    app = wx.App(False)
-    frame = SeagulFrame()
-    frame.Show()
-
-    app.MainLoop()
