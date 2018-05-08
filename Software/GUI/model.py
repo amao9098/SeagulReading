@@ -10,9 +10,11 @@ import os
 import time
 import platform
 from CCDLUtil.EEGInterface.Emotiv.EmotivInterface import EmotivStreamer
+from CCDLUtil.Utility.Decorators import threaded
 from constants import *
 from correlation import get_baseline
 import pandas as pd
+import numpy as np
 
 
 class Model:
@@ -20,19 +22,27 @@ class Model:
     def __init__(self):
         self._subject_name = ""
         self._exp_num = ""
-        self._rest_file_path = "../Data/Resting" + self._exp_num + "_eeg.csv"
+        self._rest_file_path = "../Data/Resting/" + self._exp_num + "_eeg.csv"
+        self._read_file_path = "../Data/Reading/" + self._exp_num + "_eeg.csv"
         self._streamer = None
+        self._fs = 128
         ### resting related ###
-        self._rested = False
+        ###### FOR TESTING !!!! SHOULD BE FALSE
+        self._rested = True
         self._baseline_value = None
         self._start_rest_time = None
         self._finish_rest_time = None
         self._csv_line = None
+        ### reading related ###
+        self._start_read_time = None
+        self._finish_read_time = None
+        self._last_ping_time = None
+        self._is_reading = False
 
     def get_info(self, subject_name, exp_num):
         self._subject_name = subject_name
         self._exp_num = exp_num
-        self._rest_file_path = "../Data/Resting" + self._exp_num + "_eeg.csv"
+        self._rest_file_path = "../Data/Resting/" + self._exp_num + "_eeg.csv"
 
     def get_start_rest_time(self):
         assert self._start_rest_time is not None
@@ -47,7 +57,7 @@ class Model:
 
     def start_resting(self):
         self._start_rest_time = time.time()
-        self._start_streamer()
+        self._start_streamer(True)
         self._rested = True
 
     def finish_resting(self):
@@ -57,11 +67,38 @@ class Model:
         # return the length of csv file
         self._csv_line = pd.read_csv(self._rest_file_path).shape[0]
 
-    def _start_streamer(self):
-        assert self._subject_name != "" and self._exp_num != ""
+    def start_reading(self):
+        self._is_reading = True
+        self._start_read_time = time.time()
+        self._start_streamer(False)
+
+    @threaded(False)
+    def detection(self):
+        sys.stdout.flush()
+        # last least 30 seconds apart
+        while self._is_reading:
+            if self._last_ping_time is None or time.time() - self._last_ping_time > 30:
+                # take some data from out buffer queue
+                data = []
+                i = 0
+                while i < 2 * self._fs:
+                    # blocking call
+                    data.append(self._streamer.out_buffer_queue.get())
+                    sys.stdout.flush()
+                    i += 1
+                data = np.asarray(data)
+                data.reshape((-1, 2 * self._fs))
+                print(data)
+
+    def _start_streamer(self, rest):
+        #assert self._subject_name != "" and self._exp_num != ""
         # make sure we have Data/Resting folder
-        Model._check_dir(os.path.dirname("../Data/Resting/"))
-        self._streamer = EmotivStreamer(self._rest_file_path, EMOTIV_LIB_PATH)
+        if rest:
+            Model._check_dir(os.path.dirname("../Data/Resting/"))
+            self._streamer = EmotivStreamer(self._rest_file_path, EMOTIV_LIB_PATH)
+        else:
+            Model._check_dir(os.path.dirname("../Data/Reading/"))
+            self._streamer = EmotivStreamer(self._read_file_path, EMOTIV_LIB_PATH)
         self._streamer.start_recording()
 
     def _calculate_baseline(self):

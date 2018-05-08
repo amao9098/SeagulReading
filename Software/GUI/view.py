@@ -8,6 +8,7 @@ import wx
 import time
 from model import Model
 
+
 class SeagullFrame(wx.Frame):
 
     def __init__(self):
@@ -50,8 +51,52 @@ class SeagullFrame(wx.Frame):
         if not self.model.is_rested():
             wx.MessageBox('Need to record resting data first!', 'Warning', wx.OK | wx.ICON_INFORMATION)
         else:
-            pass
-       
+            read_window = ReadingWindow(self.model, 1)
+            read_window.Show()
+            # start detection
+            self.model.start_reading()
+            self.model.detection()
+
+    def on_close(self, event):
+        self.Destroy()
+
+
+class ReadingWindow(wx.Frame):
+
+    def __init__(self, model, text_num):
+        wx.Frame.__init__(self, None, wx.ID_ANY, "Please enter your information:", size=(650, 300))
+        self.model = model
+        self.panel = wx.Panel(self)
+        self.Bind(wx.EVT_CLOSE, self.on_close)
+        self._text_num = text_num
+        self._text = None
+        # load text
+        with open("../Text/passage_" + str(self._text_num) + ".txt", "r") as f:
+            self._text = [line.strip() + "." for line in f.read().split(".")]
+        self._text = self._text[:-1]
+        # text panel
+        self._shown_text_idx = 0
+        self._shown_text = wx.StaticText(self.panel, label=self._text[self._shown_text_idx])
+        self._shown_text.Wrap(500)
+        font = wx.Font(14, wx.MODERN, wx.NORMAL, wx.BOLD)
+        self._shown_text.SetFont(font)
+        # next button
+        self._next_button = wx.Button(self.panel, label="Next line")
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(self._shown_text, 10, wx.EXPAND | wx.ALL, border=10)
+        sizer.Add(self._next_button, 0, wx.RIGHT | wx.ALL, border=10)
+        self.panel.SetSizer(sizer)
+        # button listener
+        self._next_button.Bind(wx.EVT_BUTTON, self.on_next_line)
+
+    def on_next_line(self, event):
+        if self._shown_text_idx < len(self._text) - 1:
+            self._shown_text_idx += 1
+            self._shown_text.SetLabel(self._text[self._shown_text_idx])
+            self._shown_text.Wrap(500)
+        else:
+            wx.MessageBox("This is the last line! You are done", "Warning", wx.OK | wx.ICON_INFORMATION)
+
     def on_close(self, event):
         self.Destroy()
 
