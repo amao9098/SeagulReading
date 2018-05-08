@@ -33,9 +33,9 @@ def high_pass(low, high, df, fs, order=4):
     return fil_df
 
 
-def baseline(resting_cz, fs):
+def baseline(resting_o1, fs):
     """
-    Using resting data to calculate baseline. For now, using channle CZ
+    Using resting data to calculate baseline. For now, using channle O1
 
     params:
         resting_cz: Resting data from CZ with length divisible by 2 * fs
@@ -44,12 +44,12 @@ def baseline(resting_cz, fs):
     returns:
         value of the baseline
     """
-    assert len(resting_cz) % (2 * fs) == 0
-    resting_cz = resting_cz.values.reshape((int(len(resting_cz) / (2 * fs)), 2 * fs))
+    assert len(resting_o1) % (2 * fs) == 0
+    resting_o1 = resting_o1.values.reshape((int(len(resting_o1) / (2 * fs)), 2 * fs))
     # power list to store the power spectrum for each epoch
     freq = []
     powers = []
-    for epoch in resting_cz:
+    for epoch in resting_o1:
         f, power = welch(epoch, nperseg=fs, noverlap=None)
         freq = f
         powers.append(power)
@@ -63,3 +63,9 @@ def baseline(resting_cz, fs):
         corrs.append(corrcoef(power, mean_power)[0][1])
     # baseline is the mean of correlations
     return np.mean(corrs)
+
+
+ def get_baseline(file_dir, low, high, fs, order=4):
+    df = read_data(file_dir)
+    filtered_df = high_pass(low, high, df, fs, )
+
