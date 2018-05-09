@@ -19,7 +19,7 @@ import numpy as np
 
 class Model:
   
-    def __init__(self):
+    def __init__(self, view):
         self._subject_name = ""
         self._exp_num = ""
         self._rest_file_path = "../Data/Resting/" + self._exp_num + "_eeg.csv"
@@ -27,8 +27,7 @@ class Model:
         self._streamer = None
         self._fs = 128
         ### resting related ###
-        ###### FOR TESTING !!!! SHOULD BE FALSE
-        self._rested = True
+        self._rested = False
         self._baseline_value = None
         self._start_rest_time = None
         self._finish_rest_time = None
@@ -38,6 +37,9 @@ class Model:
         self._finish_read_time = None
         self._last_ping_time = None
         self._is_reading = False
+        ### VIEW ###
+        # model should actually avoid dependent on view, but oh well, Peiyun needs it done tomorrow
+        self.view = view
 
     def get_info(self, subject_name, exp_num):
         self._subject_name = subject_name
@@ -89,6 +91,10 @@ class Model:
                 data = np.asarray(data)
                 data.reshape((-1, 2 * self._fs))
                 print(data)
+                #self.ping_and_get_answer()
+
+    def ping_and_get_answer(self):
+        answer = self.view.get_pinged("Hello")
 
     def _start_streamer(self, rest):
         #assert self._subject_name != "" and self._exp_num != ""
@@ -104,6 +110,7 @@ class Model:
     def _calculate_baseline(self):
         assert not self._baseline_value and self._rested
         self._baseline_value = get_baseline(self._rest_file_path, 1, 40, 256)
+
 
     @staticmethod
     def _check_dir(dir):

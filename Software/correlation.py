@@ -67,6 +67,16 @@ def baseline(resting_o1, fs):
     return np.mean(corrs)
 
 
+def correlation_rest_read():
+    """
+    Get mean of rest (2 second)
+
+    Corr(rest_mean, read live)
+    :return:
+    """
+    pass
+
+
 def get_baseline(file_dir, low, high, fs, order=4):
     df = read_data(file_dir)
     filtered_df = high_pass(low, high, df, fs, order)

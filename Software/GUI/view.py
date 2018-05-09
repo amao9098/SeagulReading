@@ -32,7 +32,7 @@ class SeagullFrame(wx.Frame):
         self.rest_btn.Bind(wx.EVT_BUTTON, self.on_start_rest)
         self.read_btn.Bind(wx.EVT_BUTTON, self.on_start_read)
         ### Software Model ###
-        self.model = Model()
+        self.model = Model(self)
 
     def on_start_rest(self, event):
         """
@@ -57,6 +57,13 @@ class SeagullFrame(wx.Frame):
             self.model.start_reading()
             self.model.detection()
 
+    def get_pinged(self, question):
+        dlg = wx.TextEntryDialog(self.panel, question, defaultValue="Answer: ")
+        dlg.ShowModal()
+        result = dlg.GetValue()
+        dlg.Destroy()
+        return result
+
     def on_close(self, event):
         self.Destroy()
 
@@ -72,8 +79,7 @@ class ReadingWindow(wx.Frame):
         self._text = None
         # load text
         with open("../Text/passage_" + str(self._text_num) + ".txt", "r") as f:
-            self._text = [line.strip() + "." for line in f.read().split(".")]
-        self._text = self._text[:-1]
+            self._text = [line.strip() + "." for line in f.read().split("\n")]
         # text panel
         self._shown_text_idx = 0
         self._shown_text = wx.StaticText(self.panel, label=self._text[self._shown_text_idx])
@@ -152,7 +158,7 @@ class StartWindow(wx.Frame):
         self.model.start_resting()
         # clear screen
         for child in self.panel.GetChildren():
-          child.Destroy()
+            child.Destroy()
         # start timer
         wait_txt = wx.StaticText(self.panel, label="Please wait for resting data collection to be done...")
         font = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
