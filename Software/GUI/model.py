@@ -19,7 +19,7 @@ import numpy as np
 
 class Model:
   
-    def __init__(self, view):
+    def __init__(self, view, text_num):
         self._subject_name = ""
         self._exp_num = ""
         self._rest_file_path = "../Data/Resting/" + self._exp_num + "_eeg.csv"
@@ -37,6 +37,11 @@ class Model:
         self._finish_read_time = None
         self._last_ping_time = None
         self._is_reading = False
+        self._text_num = text_num
+        self._text = None
+        # load text
+        with open("../Text/passage_" + str(self._text_num) + ".txt", "r") as f:
+            self._text = [line.strip() + "." for line in f.read().split("\n")]
         ### VIEW ###
         # model should actually avoid dependent on view, but oh well, Peiyun needs it done tomorrow
         self.view = view

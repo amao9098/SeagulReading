@@ -75,11 +75,6 @@ class ReadingWindow(wx.Frame):
         self.model = model
         self.panel = wx.Panel(self)
         self.Bind(wx.EVT_CLOSE, self.on_close)
-        self._text_num = text_num
-        self._text = None
-        # load text
-        with open("../Text/passage_" + str(self._text_num) + ".txt", "r") as f:
-            self._text = [line.strip() + "." for line in f.read().split("\n")]
         # text panel
         self._shown_text_idx = 0
         self._shown_text = wx.StaticText(self.panel, label=self._text[self._shown_text_idx])
