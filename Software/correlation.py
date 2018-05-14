@@ -45,7 +45,6 @@ def baseline(resting_o1, fs):
     returns:
         value of the baseline
     """
-    print(len(resting_o1))
     assert len(resting_o1) % (2 * fs) == 0
     resting_o1 = resting_o1.values.reshape((int(len(resting_o1) / (2 * fs)), 2 * fs))
     # power list to store the power spectrum for each epoch

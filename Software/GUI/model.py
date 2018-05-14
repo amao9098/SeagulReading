@@ -90,7 +90,6 @@ class Model:
                     i += 1
                 data = np.asarray(data)
                 data.reshape((-1, 2 * self._fs))
-                print(data)
                 #self.ping_and_get_answer()
 
     def ping_and_get_answer(self):
