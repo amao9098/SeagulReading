@@ -12,9 +12,10 @@ import platform
 from CCDLUtil.EEGInterface.Emotiv.EmotivInterface import EmotivStreamer
 from CCDLUtil.Utility.Decorators import threaded
 from constants import *
-from correlation import get_baseline
+from correlation import get_baseline, live_power
 import pandas as pd
 import numpy as np
+import view
 
 
 class Model:
@@ -28,6 +29,7 @@ class Model:
         self._fs = 128
         ### resting related ###
         self._rested = False
+        self._rest_mean = None
         self._baseline_value = None
         self._start_rest_time = None
         self._finish_rest_time = None
@@ -37,11 +39,11 @@ class Model:
         self._finish_read_time = None
         self._last_ping_time = None
         self._is_reading = False
-        self._text_num = text_num
         self._text = None
         # load text
-        with open("../Text/passage_" + str(self._text_num) + ".txt", "r") as f:
+        with open("../Text/passage_" + str(text_num) + ".txt", "r") as f:
             self._text = [line.strip() + "." for line in f.read().split("\n")]
+            print(len(self._text))
         ### VIEW ###
         # model should actually avoid dependent on view, but oh well, Peiyun needs it done tomorrow
         self.view = view
@@ -68,6 +70,7 @@ class Model:
         self._rested = True
 
     def finish_resting(self):
+        time.sleep(1)
         self._streamer.stop_recording()
         self._calculate_baseline()
         self._finish_rest_time = time.time()
@@ -75,27 +78,11 @@ class Model:
         self._csv_line = pd.read_csv(self._rest_file_path).shape[0]
 
     def start_reading(self):
+        print('startin reading')
         self._is_reading = True
         self._start_read_time = time.time()
-        self._start_streamer(False)
-
-    @threaded(False)
-    def detection(self):
-        sys.stdout.flush()
-        # last least 30 seconds apart
-        while self._is_reading:
-            if self._last_ping_time is None or time.time() - self._last_ping_time > 30:
-                # take some data from out buffer queue
-                data = []
-                i = 0
-                while i < 2 * self._fs:
-                    # blocking call
-                    data.append(self._streamer.out_buffer_queue.get())
-                    sys.stdout.flush()
-                    i += 1
-                data = np.asarray(data)
-                data.reshape((-1, 2 * self._fs))
-                #self.ping_and_get_answer()
+        self.check_mind_wandering()
+        print('finiiiiiiii')
 
     def ping_and_get_answer(self):
         answer = self.view.get_pinged("Hello")
@@ -113,8 +100,19 @@ class Model:
 
     def _calculate_baseline(self):
         assert not self._baseline_value and self._rested
-        self._baseline_value = get_baseline(self._rest_file_path, 1, 40, 256)
+        self._rest_mean, self._baseline_value = get_baseline(self._rest_file_path, 1, 40, 256)
 
+    def get_text(self, idx):
+        print(idx)
+        print(len(self._text))
+        if idx < 0 or idx >= len(self._text):
+            raise ValueError("text index out of bound!")
+        return self._text[idx]
+
+    def check_mind_wandering(self):
+        print("eeee")
+        if live_power(self._streamer, self._fs, self._rest_mean, self._baseline_value):
+            view.play_beep(duration=10)
 
     @staticmethod
     def _check_dir(dir):

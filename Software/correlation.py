@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from numpy import corrcoef
-from scipy.signal import butter, lfilter, welch, find_peaks_cwt
+from scipy.signal import butter, lfilter, welch
 
 
 def read_data(file_dir):
@@ -45,8 +45,8 @@ def baseline(resting_o1, fs):
     returns:
         value of the baseline
     """
-    assert len(resting_o1) % (2 * fs) == 0
-    resting_o1 = resting_o1.values.reshape((int(len(resting_o1) / (2 * fs)), 2 * fs))
+    assert len(resting_o1) % fs == 0
+    resting_o1 = resting_o1.values.reshape((int(len(resting_o1) / fs), fs))
     # power list to store the power spectrum for each epoch
     freq = []
     powers = []
@@ -63,17 +63,7 @@ def baseline(resting_o1, fs):
     for power in powers:
         corrs.append(corrcoef(power, mean_power)[0][1])
 
-    return np.mean(corrs)
-
-
-def correlation_rest_read():
-    """
-    Get mean of rest (2 second)
-
-    Corr(rest_mean, read live)
-    :return:
-    """
-    pass
+    return mean_power, np.mean(corrs)
 
 
 def get_baseline(file_dir, low, high, fs, order=4):
@@ -81,6 +71,34 @@ def get_baseline(file_dir, low, high, fs, order=4):
     filtered_df = high_pass(low, high, df, fs, order)
     # cut length
     o1 = filtered_df["O1"]
-    o1_truncate = len(o1) % (2 * fs)
+    o1_truncate = len(o1) % fs
     o1 = o1.iloc[0:(len(o1) - o1_truncate)]
     return baseline(o1, fs)
+
+
+def live_power(eeg, fs, mean_power, baseline):
+    """
+    O1 is index 7
+
+    :param eeg: eeg interface
+    :param fs: sampling rate
+    :return:
+    """
+    print("started clearning")
+    eeg.out_buffer_queue.queue.clear()
+    print("finish clearning")
+    data = np.zeros(fs)
+    for i in range(fs):
+        print("#####")
+        data[i] = eeg.out_buffer_queue.get()[7]
+
+    print('one second data finished')
+    f, power = welch(data, nperseg=fs, noverlap=None)
+    # correlation of  mean power and new power
+    c = corrcoef(mean_power, power)[0][1]
+    print('corr: ', c)
+    print('baseline: ', baseline)
+    return c >= baseline
+
+
+

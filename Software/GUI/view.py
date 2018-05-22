@@ -4,6 +4,7 @@ GUI for Seagul Reading Project
 - SeagulFrame: Start up GUI
 """
 
+import winsound
 import wx
 import time
 from model import Model
@@ -32,7 +33,7 @@ class SeagullFrame(wx.Frame):
         self.rest_btn.Bind(wx.EVT_BUTTON, self.on_start_rest)
         self.read_btn.Bind(wx.EVT_BUTTON, self.on_start_read)
         ### Software Model ###
-        self.model = Model(self)
+        self.model = Model(self, 1)
 
     def on_start_rest(self, event):
         """
@@ -55,7 +56,6 @@ class SeagullFrame(wx.Frame):
             read_window.Show()
             # start detection
             self.model.start_reading()
-            self.model.detection()
 
     def get_pinged(self, question):
         dlg = wx.TextEntryDialog(self.panel, question, defaultValue="Answer: ")
@@ -77,7 +77,7 @@ class ReadingWindow(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close)
         # text panel
         self._shown_text_idx = 0
-        self._shown_text = wx.StaticText(self.panel, label=self._text[self._shown_text_idx])
+        self._shown_text = wx.StaticText(self.panel, label=self.model.get_text(self._shown_text_idx))
         self._shown_text.Wrap(500)
         font = wx.Font(14, wx.MODERN, wx.NORMAL, wx.BOLD)
         self._shown_text.SetFont(font)
@@ -91,11 +91,12 @@ class ReadingWindow(wx.Frame):
         self._next_button.Bind(wx.EVT_BUTTON, self.on_next_line)
 
     def on_next_line(self, event):
-        if self._shown_text_idx < len(self._text) - 1:
-            self._shown_text_idx += 1
-            self._shown_text.SetLabel(self._text[self._shown_text_idx])
+        self._shown_text_idx += 1
+        try:
+            self._shown_text.SetLabel(self.model.get_text(self._shown_text_idx))
             self._shown_text.Wrap(500)
-        else:
+        except ValueError as e:
+            print(e)
             wx.MessageBox("This is the last line! You are done", "Warning", wx.OK | wx.ICON_INFORMATION)
 
     def on_close(self, event):
@@ -173,4 +174,8 @@ class StartWindow(wx.Frame):
  
     def on_cancel(self, event):
         self.on_close(event)
+
+
+def play_beep(frequency=2500, duration=1000):
+    winsound.Beep(frequency, duration)
 

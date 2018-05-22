@@ -1,5 +1,5 @@
 import wx
-from view import SeagullFrame
+from view import SeagullFrame, play_beep
 
 
 def main():
