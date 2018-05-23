@@ -20,7 +20,7 @@ import view
 
 class Model:
   
-    def __init__(self, view, text_num, ping_interval=5):
+    def __init__(self, text_num, ping_interval=5):
         self._subject_name = ""
         self._exp_num = ""
         self._rest_file_path = "../Data/Resting/" + self._exp_num + "_eeg.csv"
@@ -46,7 +46,7 @@ class Model:
             self._text = [line.strip() + "." for line in f.read().split("\n")]
             print(len(self._text))
         ### VIEW ###
-        self.view = view
+        self.reading_view = None
 
     def get_info(self, subject_name, exp_num):
         self._subject_name = subject_name
@@ -104,13 +104,20 @@ class Model:
             raise ValueError("text index out of bound!")
         return self._text[idx]
 
+    def set_view(self, reading_view):
+        assert isinstance(reading_view, view.ReadingWindow)
+        self.reading_view = reading_view
+
     @threaded(False)
     def check_mind_wandering(self):
+        assert self.reading_view is not None
         while self._is_reading:
             if live_power(self._streamer, self._fs, self._rest_mean, self._baseline_value, verbose=True)\
                     and (self._last_ping_time is None or time.time() - self._last_ping_time > self._ping_interval):
                 view.play_beep(duration=500)
                 self._last_ping_time = time.time()
+                # we don't have controllers...
+                self.reading_view.flash()
 
     @staticmethod
     def _check_dir(dir):

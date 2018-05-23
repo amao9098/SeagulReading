@@ -13,13 +13,13 @@ from model import Model
 class SeagullFrame(wx.Frame):
 
     def __init__(self):
-        wx.Frame.__init__(self, None, wx.ID_ANY, "Seagul Reading")
+        wx.Frame.__init__(self, None, wx.ID_ANY, "Seagull Reading")
         self.panel = wx.Panel(self)
         self.Bind(wx.EVT_CLOSE, self.on_close)
         self.rest_btn = wx.Button(self.panel, label="Start 5-minute Resting")
         self.read_btn = wx.Button(self.panel, label="Start Reading")
         ### GUI ###
-        self.title = wx.StaticText(self.panel, label="Seagul Reading")
+        self.title = wx.StaticText(self.panel, label="Seagull Reading")
         font = wx.Font(18, wx.MODERN, wx.NORMAL, wx.BOLD)
         self.title.SetFont(font)
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -33,7 +33,7 @@ class SeagullFrame(wx.Frame):
         self.rest_btn.Bind(wx.EVT_BUTTON, self.on_start_rest)
         self.read_btn.Bind(wx.EVT_BUTTON, self.on_start_read)
         ### Software Model ###
-        self.model = Model(self, 1)
+        self.model = Model("1")
 
     def on_start_rest(self, event):
         """
@@ -57,13 +57,6 @@ class SeagullFrame(wx.Frame):
             # start detection
             self.model.start_reading()
 
-    def get_pinged(self, question):
-        dlg = wx.TextEntryDialog(self.panel, question, defaultValue="Answer: ")
-        dlg.ShowModal()
-        result = dlg.GetValue()
-        dlg.Destroy()
-        return result
-
     def on_close(self, event):
         self.Destroy()
 
@@ -83,12 +76,14 @@ class ReadingWindow(wx.Frame):
         self._shown_text.SetFont(font)
         # next button
         self._next_button = wx.Button(self.panel, label="Next line")
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(self._shown_text, 10, wx.EXPAND | wx.ALL, border=10)
-        sizer.Add(self._next_button, 0, wx.RIGHT | wx.ALL, border=10)
-        self.panel.SetSizer(sizer)
+        self.sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.sizer.Add(self._shown_text, 10, wx.EXPAND | wx.ALL, border=10)
+        self.sizer.Add(self._next_button, 0, wx.RIGHT | wx.ALL, border=10)
+        self.panel.SetSizer(self.sizer)
         # button listener
         self._next_button.Bind(wx.EVT_BUTTON, self.on_next_line)
+        # bind model
+        self.model.set_view(self)
 
     def on_next_line(self, event):
         self._shown_text_idx += 1
@@ -101,6 +96,12 @@ class ReadingWindow(wx.Frame):
 
     def on_close(self, event):
         self.Destroy()
+
+    def flash(self):
+        self.sizer.Show(self._shown_text, False)
+        time.sleep(0.3)
+        self.sizer.Show(self._shown_text, True)
+        # this blocks GUI clock a short amount of time
 
 
 class StartWindow(wx.Frame):
