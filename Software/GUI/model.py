@@ -45,7 +45,6 @@ class Model:
             self._text = [line.strip() + "." for line in f.read().split("\n")]
             print(len(self._text))
         ### VIEW ###
-        # model should actually avoid dependent on view, but oh well, Peiyun needs it done tomorrow
         self.view = view
 
     def get_info(self, subject_name, exp_num):
@@ -84,9 +83,6 @@ class Model:
         self._start_read_time = time.time()
         self.check_mind_wandering()
 
-    def ping_and_get_answer(self):
-        answer = self.view.get_pinged("Hello")
-
     def _start_streamer(self, rest):
         assert self._subject_name != "" and self._exp_num != ""
         # make sure we have Data/Resting folder
@@ -103,8 +99,6 @@ class Model:
         self._rest_mean, self._baseline_value = get_baseline(self._rest_file_path, 1, 40, 128)
 
     def get_text(self, idx):
-        print(idx)
-        print(len(self._text))
         if idx < 0 or idx >= len(self._text):
             raise ValueError("text index out of bound!")
         return self._text[idx]
@@ -112,7 +106,7 @@ class Model:
     @threaded(False)
     def check_mind_wandering(self):
         while self._is_reading:
-            if live_power(self._streamer, self._fs, self._rest_mean, self._baseline_value):
+            if live_power(self._streamer, self._fs, self._rest_mean, self._baseline_value, verbose=True):
                 view.play_beep(duration=500)
 
     @staticmethod
@@ -122,15 +116,3 @@ class Model:
 
     def __str__(self):
         return "subject name: %s, experiment number: %s" % (self._subject_name, self._exp_num)
-  
-
-def notify():
-    # works on mac, need to modify on windows
-    os = platform.system()
-    if os == "Darwin":
-        sys.stdout.write('\a')
-        sys.stdout.flush()
-
-
-
-notify()

@@ -51,11 +51,9 @@ def baseline(resting_o1, fs):
     freq = []
     powers = []
     for epoch in resting_o1:
-        print(len(epoch))
         f, power = welch(epoch, nperseg=fs, noverlap=None)
         freq = f
         powers.append(power)
-        print(len(power))
     powers = np.asarray(powers)
     # take the mean of power
     mean_power = np.mean(powers, axis=0)
