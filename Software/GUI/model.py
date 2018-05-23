@@ -20,7 +20,7 @@ import view
 
 class Model:
   
-    def __init__(self, view, text_num):
+    def __init__(self, view, text_num, ping_interval=5):
         self._subject_name = ""
         self._exp_num = ""
         self._rest_file_path = "../Data/Resting/" + self._exp_num + "_eeg.csv"
@@ -37,9 +37,10 @@ class Model:
         ### reading related ###
         self._start_read_time = None
         self._finish_read_time = None
-        self._last_ping_time = None
         self._is_reading = False
         self._text = None
+        self._last_ping_time = None
+        self._ping_interval = ping_interval
         # load text
         with open("../Text/passage_" + str(text_num) + ".txt", "r") as f:
             self._text = [line.strip() + "." for line in f.read().split("\n")]
@@ -106,8 +107,10 @@ class Model:
     @threaded(False)
     def check_mind_wandering(self):
         while self._is_reading:
-            if live_power(self._streamer, self._fs, self._rest_mean, self._baseline_value, verbose=True):
+            if live_power(self._streamer, self._fs, self._rest_mean, self._baseline_value, verbose=True)\
+                    and (self._last_ping_time is None or time.time() - self._last_ping_time > self._ping_interval):
                 view.play_beep(duration=500)
+                self._last_ping_time = time.time()
 
     @staticmethod
     def _check_dir(dir):
