@@ -51,9 +51,11 @@ def baseline(resting_o1, fs):
     freq = []
     powers = []
     for epoch in resting_o1:
+        print(len(epoch))
         f, power = welch(epoch, nperseg=fs, noverlap=None)
         freq = f
         powers.append(power)
+        print(len(power))
     powers = np.asarray(powers)
     # take the mean of power
     mean_power = np.mean(powers, axis=0)
@@ -67,6 +69,16 @@ def baseline(resting_o1, fs):
 
 
 def get_baseline(file_dir, low, high, fs, order=4):
+    """
+    Get baseline value from EEG resting data
+
+    :param file_dir: file path of resting data
+    :param low: low pass filter
+    :param high: high pass filter
+    :param fs: sampling rate
+    :param order: order of filter
+    :return: baseline value
+    """
     df = read_data(file_dir)
     filtered_df = high_pass(low, high, df, fs, order)
     # cut length
@@ -76,29 +88,29 @@ def get_baseline(file_dir, low, high, fs, order=4):
     return baseline(o1, fs)
 
 
-def live_power(eeg, fs, mean_power, baseline):
+def live_power(eeg, fs, mean_power, baseline, verbose=False):
     """
-    O1 is index 7
+    Compares one-second EEG data to baseline correlation.
 
-    :param eeg: eeg interface
+    :param eeg: eeg streamer
     :param fs: sampling rate
-    :return:
+    :param mean_power: the mean power calculated from resting
+    :param baseline: the baseline calculated from resting
+    :param verbose:
+    :return: True if one-second EEG has correlation with mean power over baseline
     """
-    print("started clearning")
     eeg.out_buffer_queue.queue.clear()
-    print("finish clearning")
     data = np.zeros(fs)
     for i in range(fs):
-        print("#####")
         data[i] = eeg.out_buffer_queue.get()[7]
-
-    print('one second data finished')
     f, power = welch(data, nperseg=fs, noverlap=None)
     # correlation of  mean power and new power
+    length = min(len(mean_power), len(power))
+    mean_power = mean_power[:length]
+    power = power[:length]
     c = corrcoef(mean_power, power)[0][1]
-    print('corr: ', c)
-    print('baseline: ', baseline)
+    if verbose:
+        print('correlation: %s' % c)
+        print('baseline: %s' % baseline)
     return c >= baseline
-
-
 
