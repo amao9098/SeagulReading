@@ -52,6 +52,7 @@ class Model:
         self._subject_name = subject_name
         self._exp_num = exp_num
         self._rest_file_path = "../Data/Resting/" + self._exp_num + "_eeg.csv"
+        self._read_file_path = "../Data/Reading/" + self._exp_num + "_eeg.csv"
 
     def get_start_rest_time(self):
         assert self._start_rest_time is not None
@@ -71,36 +72,35 @@ class Model:
 
     def finish_resting(self):
         time.sleep(1)
-        self._streamer.stop_recording()
+        self._streamer.stop_recording(stop_streamer=True)
         self._calculate_baseline()
         self._finish_rest_time = time.time()
         # return the length of csv file
         self._csv_line = pd.read_csv(self._rest_file_path).shape[0]
 
     def start_reading(self):
-        print('startin reading')
         self._is_reading = True
+        self._start_streamer(False)
         self._start_read_time = time.time()
         self.check_mind_wandering()
-        print('finiiiiiiii')
 
     def ping_and_get_answer(self):
         answer = self.view.get_pinged("Hello")
 
     def _start_streamer(self, rest):
-        #assert self._subject_name != "" and self._exp_num != ""
+        assert self._subject_name != "" and self._exp_num != ""
         # make sure we have Data/Resting folder
         if rest:
             Model._check_dir(os.path.dirname("../Data/Resting/"))
             self._streamer = EmotivStreamer(self._rest_file_path, EMOTIV_LIB_PATH)
+            self._streamer.start_recording()
         else:
             Model._check_dir(os.path.dirname("../Data/Reading/"))
-            self._streamer = EmotivStreamer(self._read_file_path, EMOTIV_LIB_PATH)
-        self._streamer.start_recording()
+            self._streamer.set_file(self._read_file_path)
 
     def _calculate_baseline(self):
         assert not self._baseline_value and self._rested
-        self._rest_mean, self._baseline_value = get_baseline(self._rest_file_path, 1, 40, 256)
+        self._rest_mean, self._baseline_value = get_baseline(self._rest_file_path, 1, 40, 128)
 
     def get_text(self, idx):
         print(idx)
@@ -109,10 +109,11 @@ class Model:
             raise ValueError("text index out of bound!")
         return self._text[idx]
 
+    @threaded(False)
     def check_mind_wandering(self):
-        print("eeee")
-        if live_power(self._streamer, self._fs, self._rest_mean, self._baseline_value):
-            view.play_beep(duration=10)
+        while self._is_reading:
+            if live_power(self._streamer, self._fs, self._rest_mean, self._baseline_value):
+                view.play_beep(duration=500)
 
     @staticmethod
     def _check_dir(dir):
